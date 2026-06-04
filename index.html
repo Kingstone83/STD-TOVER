@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>STD TOVER</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Categorie prodotto">
+        <div class="brand">
+          <div class="brand-mark">STD</div>
+          <div>
+            <h1>STD TOVER</h1>
+            <p id="dataStatus">Caricamento dati...</p>
+          </div>
+        </div>
+
+        <label class="field-label" for="productSearch">Cerca prodotto o impiego</label>
+        <div class="search-row">
+          <input id="productSearch" type="search" placeholder="es. Tovcol MS, LVT, resa">
+          <button id="clearSearch" class="icon-button" type="button" title="Pulisci ricerca" aria-label="Pulisci ricerca">×</button>
+        </div>
+
+        <div class="toggle-line">
+          <input id="hideDiscontinued" type="checkbox">
+          <label for="hideDiscontinued">Nascondi fuori listino</label>
+        </div>
+
+        <nav id="categoryList" class="category-list"></nav>
+      </aside>
+
+      <main class="workspace">
+        <section class="qa-panel" aria-labelledby="qaTitle">
+          <div class="section-heading">
+            <div>
+              <h2 id="qaTitle">Assistente tecnico</h2>
+              <p>Risponde usando soltanto le schede PDF indicizzate.</p>
+            </div>
+            <button id="resetQuestion" class="quiet-button" type="button">Nuova domanda</button>
+          </div>
+          <div class="question-grid">
+            <textarea id="questionInput" rows="4" placeholder="Chiedi ad esempio: Qual è la resa di Uniqua SQ? Come si posa Tovcol MS su massetto riscaldante? Quale prodotto è indicato per LVT?"></textarea>
+            <div class="action-column">
+              <button id="askButton" class="primary-button" type="button">Rispondi</button>
+              <select id="topicSelect" aria-label="Filtro argomento">
+                <option value="auto">Argomento automatico</option>
+                <option value="resa_consumo">Resa / consumo</option>
+                <option value="uso_impiego">Uso / impiego</option>
+                <option value="posa">Posa / incollaggio</option>
+                <option value="preparazione">Preparazione sottofondo</option>
+                <option value="tempi">Tempi</option>
+                <option value="pulizia">Pulizia</option>
+              </select>
+            </div>
+          </div>
+          <div id="answerPanel" class="answer-panel empty-state">
+            Scrivi una domanda tecnica su utilizzo, resa, posa o modalità di impiego.
+          </div>
+        </section>
+
+        <section class="content-grid">
+          <div class="product-list-panel">
+            <div class="section-heading compact">
+              <h2>Prodotti</h2>
+              <span id="resultCount"></span>
+            </div>
+            <div id="productList" class="product-list"></div>
+          </div>
+
+          <article id="productDetail" class="product-detail">
+            <div class="empty-state large">Seleziona un prodotto per leggere i dati estratti dalla scheda.</div>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="./assets/std-data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
