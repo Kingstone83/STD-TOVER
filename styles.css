@@ -294,6 +294,10 @@ textarea {
   color: var(--ink);
   text-align: left;
   cursor: pointer;
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 12px;
+  align-items: center;
 }
 
 .product-card:hover,
@@ -306,6 +310,14 @@ textarea {
   display: block;
   margin-bottom: 4px;
   font-size: 15px;
+}
+
+.product-card img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #eef3ef;
 }
 
 .product-card span {
@@ -339,6 +351,11 @@ textarea {
   color: var(--amber);
 }
 
+.pill.price {
+  background: #e8f4ff;
+  color: #15527a;
+}
+
 .product-detail {
   padding: 20px;
   min-height: 520px;
@@ -349,6 +366,21 @@ textarea {
   gap: 6px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--line);
+}
+
+.detail-with-image {
+  grid-template-columns: minmax(0, 1fr) 180px;
+  align-items: center;
+  gap: 20px;
+}
+
+.product-photo {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  justify-self: end;
+  border-radius: 8px;
+  background: #eef3ef;
 }
 
 .detail-title h2 {
@@ -386,6 +418,32 @@ textarea {
   color: #35433e;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.price-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.price-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  min-height: 34px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #f4f8f6;
+  color: #33443d;
+  font-size: 14px;
+}
+
+.price-list strong {
+  white-space: nowrap;
+  color: #0b4f4a;
 }
 
 .source-line {
@@ -436,8 +494,13 @@ textarea {
   .app-shell,
   .content-grid,
   .question-grid,
-  .field-grid {
+  .field-grid,
+  .detail-with-image {
     grid-template-columns: 1fr;
+  }
+
+  .product-photo {
+    justify-self: start;
   }
 
   .sidebar {

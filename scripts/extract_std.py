@@ -87,8 +87,17 @@ def filename_title(path: Path) -> str:
 
 def product_header(path: Path, lines: list[str]) -> tuple[str, int]:
     fallback = filename_title(path)
+    if "stucco" in fallback.lower():
+        return fallback, 0
     generic = ("certificazioni", "certifications")
-    generic_prefixes = ("rev.", "la presente annulla", "altra precedente", "i consigli tecnici")
+    generic_prefixes = (
+        "rev.",
+        "la presente annulla",
+        "altra precedente",
+        "i consigli tecnici",
+        "eventualmente forniti",
+        "o per iscritto",
+    )
     for idx, raw in enumerate(lines[:6]):
         line = raw.strip()
         compact = line.lower()

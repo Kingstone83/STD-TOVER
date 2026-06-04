@@ -1,5 +1,6 @@
 (function () {
   const data = window.STD_DATA || { products: [], categories: [] };
+  const extraData = window.STD_EXTRA || { products: {}, priceList: {} };
   const state = {
     category: "Tutte",
     query: "",
@@ -32,6 +33,7 @@
     temperatura: "Temperatura / umidità",
     pulizia: "Pulizia",
     note_limiti: "Note e limiti",
+    prezzi: "Prezzi / listino",
   };
 
   const topicTerms = {
@@ -43,7 +45,38 @@
     temperatura: ["temperatura", "gelo", "umidita", "u.r", "°c"],
     pulizia: ["pulizia", "pulire", "lavaggio", "attrezzi", "residui", "stripcoll"],
     note_limiti: ["non", "evitare", "note", "limiti", "idoneo", "attenzione", "avvertenze"],
+    prezzi: ["prezzo", "prezzi", "listino", "costo", "costa", "euro", "€", "confezione", "confezioni"],
   };
+
+  function productExtra(product) {
+    return extraData.products?.[product.id] || {};
+  }
+
+  function priceText(product) {
+    const prices = productExtra(product).prices || [];
+    return prices.flatMap((match) => {
+      const rows = match.rows || [];
+      if (!rows.length) return match.excerpt || [];
+      return rows.map((row) => `${match.listinoName}: ${row.confezione} € ${row.prezzo}/${row.unita || "unità"}`);
+    }).join(" ");
+  }
+
+  function formatPriceRow(row) {
+    const unit = row.unita ? `/${escapeHtml(row.unita)}` : "";
+    const pack = row.confezione ? `<span>${escapeHtml(row.confezione)}</span>` : "<span>Confezione non isolata</span>";
+    return `<li>${pack}<strong>€ ${escapeHtml(row.prezzo)}${unit}</strong></li>`;
+  }
+
+  function priceSnippets(product) {
+    const prices = productExtra(product).prices || [];
+    return prices.map((match) => {
+      const rows = match.rows || [];
+      const rowText = rows.length
+        ? rows.map((row) => `${row.confezione}: € ${row.prezzo}/${row.unita || "unità"}`).join("; ")
+        : (match.excerpt || []).join(" ");
+      return `${match.listinoName} - listino prezzi 2026, pagina ${match.page}: ${rowText}`;
+    });
+  }
 
   function normalize(value) {
     return String(value || "")
@@ -68,6 +101,7 @@
       product.subtitle,
       product.category,
       product.source,
+      priceText(product),
       product.text,
     ].join(" "));
   }
@@ -106,6 +140,7 @@
         if (haystack.includes(normalize(term))) score += 0.8;
       });
       if ((product.fields[topic] || []).length) score += 8;
+      if (topic === "prezzi" && (productExtra(product).prices || []).length) score += 35;
     });
     return score;
   }
@@ -125,7 +160,10 @@
   }
 
   function snippetsFor(product, query, topics) {
-    const fieldSnippets = topics.flatMap((topic) => (product.fields[topic] || []).slice(0, 2));
+    const fieldSnippets = topics.flatMap((topic) => {
+      if (topic === "prezzi") return priceSnippets(product).slice(0, 4);
+      return (product.fields[topic] || []).slice(0, 2);
+    });
     const candidates = product.fragments
       .map((fragment) => ({ fragment, score: scoreFragment(fragment, query, topics) }))
       .filter((item) => item.score > 0)
@@ -172,13 +210,37 @@
     }
     els.productList.innerHTML = products.map((product) => `
       <button class="product-card ${state.selectedId === product.id ? "active" : ""}" type="button" data-product-id="${escapeHtml(product.id)}">
-        <strong>${escapeHtml(product.name)}</strong>
-        <span>${escapeHtml(product.subtitle || product.source)}</span>
-        <div class="pill-row">
-          <span class="pill">${escapeHtml(product.category)}</span>
-          ${product.fuoriListino ? `<span class="pill warn">Fuori listino</span>` : ""}
+        <img src="${escapeHtml(productExtra(product).image || "")}" alt="${escapeHtml(product.name)}" loading="lazy">
+        <div>
+          <strong>${escapeHtml(product.name)}</strong>
+          <span>${escapeHtml(product.subtitle || product.source)}</span>
+          <div class="pill-row">
+            <span class="pill">${escapeHtml(product.category)}</span>
+            ${(productExtra(product).prices || []).length ? `<span class="pill price">Listino</span>` : ""}
+            ${product.fuoriListino ? `<span class="pill warn">Fuori listino</span>` : ""}
+          </div>
         </div>
       </button>
+    `).join("");
+  }
+
+  function renderPrices(product) {
+    const prices = productExtra(product).prices || [];
+    if (!prices.length) {
+      return `
+        <section class="field-card price-card">
+          <h3>Prezzi / listino</h3>
+          <p>Prezzo non trovato nel listino collegato.</p>
+        </section>`;
+    }
+    return prices.map((match) => `
+      <section class="field-card price-card">
+        <h3>${escapeHtml(match.listinoName)}</h3>
+        <ul class="price-list">
+          ${(match.rows || []).map(formatPriceRow).join("") || `<li><span>${escapeHtml((match.excerpt || []).join(" "))}</span></li>`}
+        </ul>
+        <p class="source-line">${escapeHtml(extraData.priceList?.name || "Listino prezzi")} - pagina ${escapeHtml(match.page)}</p>
+      </section>
     `).join("");
   }
 
@@ -202,16 +264,20 @@
       .join("");
 
     els.productDetail.innerHTML = `
-      <header class="detail-title">
-        <div class="pill-row">
-          <span class="pill">${escapeHtml(product.category)}</span>
-          ${product.fuoriListino ? `<span class="pill warn">Fuori listino</span>` : ""}
+      <header class="detail-title detail-with-image">
+        <div>
+          <div class="pill-row">
+            <span class="pill">${escapeHtml(product.category)}</span>
+            ${(productExtra(product).prices || []).length ? `<span class="pill price">Listino 2026</span>` : ""}
+            ${product.fuoriListino ? `<span class="pill warn">Fuori listino</span>` : ""}
+          </div>
+          <h2>${escapeHtml(product.name)}</h2>
+          <p>${escapeHtml(product.subtitle)}</p>
+          <p class="source-line">Fonte PDF: ${escapeHtml(product.relativeFolder === "." ? product.source : `${product.relativeFolder}/${product.source}`)}</p>
         </div>
-        <h2>${escapeHtml(product.name)}</h2>
-        <p>${escapeHtml(product.subtitle)}</p>
-        <p class="source-line">Fonte PDF: ${escapeHtml(product.relativeFolder === "." ? product.source : `${product.relativeFolder}/${product.source}`)}</p>
+        <img class="product-photo" src="${escapeHtml(productExtra(product).image || "")}" alt="${escapeHtml(product.name)}">
       </header>
-      <div class="field-grid">${fields || `<div class="empty-state">Nessun campo operativo rilevato automaticamente.</div>`}</div>
+      <div class="field-grid">${renderPrices(product)}${fields || `<div class="empty-state">Nessun campo operativo rilevato automaticamente.</div>`}</div>
       <pre class="full-text">${escapeHtml(product.text.slice(0, 5000))}</pre>
     `;
   }
@@ -333,7 +399,8 @@
   }
 
   function init() {
-    els.dataStatus.textContent = `${data.productCount || data.products.length} prodotti indicizzati`;
+    const pricedCount = extraData.pricedProductCount ? `, ${extraData.pricedProductCount} con prezzo` : "";
+    els.dataStatus.textContent = `${data.productCount || data.products.length} prodotti indicizzati${pricedCount}`;
     renderCategories();
     renderProducts();
     bindEvents();

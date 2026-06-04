@@ -3562,7 +3562,7 @@ window.STD_DATA = {
     },
     {
       "id": "idrostucco-rs30-it-rev03",
-      "name": "Idrostucco RS/30",
+      "name": "Idrostucco RS30",
       "subtitle": "Legante per stucco a base acquosa per la rasatura del parquet",
       "category": "Vernici & Finiture",
       "source": "Idrostucco RS30_it_rev03.pdf",
@@ -3961,7 +3961,7 @@ window.STD_DATA = {
     },
     {
       "id": "lega-stucco-rs20-it-rev03",
-      "name": "Lega Stucco RS/20",
+      "name": "Lega stucco RS20",
       "subtitle": "Resina per la stuccatura del parquet",
       "category": "Vernici & Finiture",
       "source": "Lega stucco RS20_it_rev03.pdf",
@@ -4010,7 +4010,7 @@ window.STD_DATA = {
     },
     {
       "id": "lega-stucco-rsa-it-rev02",
-      "name": "Lega Stucco RS/A",
+      "name": "Lega stucco RSA",
       "subtitle": "Resina per la stuccatura del parquet a basso odore",
       "category": "Vernici & Finiture",
       "source": "Lega stucco RSA_it_rev02.pdf",
@@ -6001,7 +6001,7 @@ window.STD_DATA = {
     },
     {
       "id": "prontostucco-rs-40-it-rev02",
-      "name": "Prontostucco RS/40",
+      "name": "Prontostucco RS 40",
       "subtitle": "Stucco pronto uso per la rasatura del parquet",
       "category": "Vernici & Finiture",
       "source": "Prontostucco RS 40_it_rev02.pdf",
@@ -10383,8 +10383,8 @@ window.STD_DATA = {
     },
     {
       "id": "stucco-modostuc",
-      "name": "eventualmente forniti, verbalmente",
-      "subtitle": "o per iscritto, circa le modalità d’uso",
+      "name": "stucco modostuc",
+      "subtitle": "La presente annulla e sostituisce ogni",
       "category": "Non classificato",
       "source": "stucco_modostuc.pdf",
       "relativeFolder": ".",
