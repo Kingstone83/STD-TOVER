@@ -11,10 +11,9 @@ Questa cartella e pronta per essere pubblicata come sito statico GitHub Pages.
 Impostazioni consigliate:
 
 - Repository name: `STD-TOVER`
-- GitHub Pages source: GitHub Actions
+- GitHub Pages source: Deploy from branch
 - Branch principale: `main`
-
-La workflow inclusa pubblica automaticamente il contenuto della root del repository.
+- Cartella Pages: `/` root
 
 ## Rigenerare i dati
 
