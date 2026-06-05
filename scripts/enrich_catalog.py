@@ -252,23 +252,49 @@ def placeholder(product: dict, out_path: Path) -> None:
     image.save(out_path, "WEBP", quality=82)
 
 
+def best_pdf_product_image(pdf_path: Path) -> Image.Image:
+    reader = PdfReader(str(pdf_path))
+    candidates = []
+    for page in reader.pages:
+        for pdf_image in page.images:
+            try:
+                image = Image.open(BytesIO(pdf_image.data)).convert("RGBA")
+            except Exception:
+                continue
+            width, height = image.size
+            if width < 80 or height < 80:
+                continue
+            if max(width, height) > 1000 or (width * height) > 900_000:
+                continue
+            ratio = width / height
+            if ratio < 0.25 or ratio > 4:
+                continue
+            alpha = image.getchannel("A")
+            bbox = alpha.getbbox()
+            if bbox:
+                content_area = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
+            else:
+                content_area = width * height
+            score = content_area + len(pdf_image.data) * 0.4
+            candidates.append((score, image))
+    if not candidates:
+        raise RuntimeError("No product image found")
+    return max(candidates, key=lambda item: item[0])[1]
+
+
 def extract_image(product: dict) -> str | None:
     pdf_path = STD_DIR / product.get("relativeFolder", ".") / product["source"]
     out_path = IMAGE_DIR / f"{product['id']}.webp"
-    if out_path.exists() and out_path.stat().st_size > 1000:
-        return f"assets/product-images/{out_path.name}"
     try:
-        reader = PdfReader(str(pdf_path))
-        pdf_image = reader.pages[0].images[0]
-        image = Image.open(BytesIO(pdf_image.data)).convert("RGBA")
-        image.thumbnail((420, 420), Image.LANCZOS)
-        canvas = Image.new("RGBA", (420, 420), (255, 255, 255, 0))
-        x = (420 - image.width) // 2
-        y = (420 - image.height) // 2
+        image = best_pdf_product_image(pdf_path)
+        image.thumbnail((620, 620), Image.LANCZOS)
+        canvas = Image.new("RGBA", (620, 620), (255, 255, 255, 0))
+        x = (620 - image.width) // 2
+        y = (620 - image.height) // 2
         canvas.alpha_composite(image, (x, y))
         canvas.save(out_path, "WEBP", quality=84, method=6)
     except Exception:
-        placeholder(product, out_path)
+        return None
     return f"assets/product-images/{out_path.name}"
 
 
@@ -279,7 +305,11 @@ def build() -> dict:
     extras = extract_prices(products)
     for product in products:
         info = extras.setdefault(product["id"], {})
-        info["image"] = extract_image(product)
+        image = extract_image(product)
+        if image:
+            info["image"] = image
+        else:
+            info.pop("image", None)
     priced = sum(1 for item in extras.values() if item.get("prices"))
     return {
         "priceList": {

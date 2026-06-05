@@ -502,7 +502,7 @@ window.STD_EXTRA = {
       "prices": [
         {
           "page": 10,
-          "listinoName": "Crema d’Olio",
+          "listinoName": "Crema d'Olio",
           "rows": [],
           "excerpt": [
             "Crema d’Olio 4x2,5 L",
@@ -612,8 +612,7 @@ window.STD_EXTRA = {
             "L"
           ]
         }
-      ],
-      "image": "assets/product-images/diluente-rmd91-it-rev02.webp"
+      ]
     },
     "durolak-dd-60-it-rev03": {
       "prices": [
@@ -1011,8 +1010,7 @@ window.STD_EXTRA = {
             "8,36"
           ]
         }
-      ],
-      "image": "assets/product-images/green-cleaner-it-rev02.webp"
+      ]
     },
     "grey-free-it-rev05": {
       "prices": [
@@ -1488,7 +1486,7 @@ window.STD_EXTRA = {
       "prices": [
         {
           "page": 14,
-          "listinoName": "Make-up",
+          "listinoName": "Make-Up",
           "rows": [
             {
               "confezione": "12x1 L",
@@ -1632,7 +1630,7 @@ window.STD_EXTRA = {
       "prices": [
         {
           "page": 5,
-          "listinoName": "Nano-fix",
+          "listinoName": "Nano-Fix",
           "rows": [],
           "excerpt": [
             "Nano-Fix 2x10 L",
@@ -1829,8 +1827,7 @@ window.STD_EXTRA = {
             "Crema PR88 12x1000 ml 29,50 pz"
           ]
         }
-      ],
-      "image": "assets/product-images/pr88-it-rev02.webp"
+      ]
     },
     "primer-c1-it-rev03": {
       "prices": [
@@ -2585,8 +2582,7 @@ window.STD_EXTRA = {
             "Solver AD 500 ml 11,45 pz"
           ]
         }
-      ],
-      "image": "assets/product-images/solver-ad-it-rev01.webp"
+      ]
     },
     "sportfloor-base-1k-it-rev02": {
       "prices": [
@@ -2649,7 +2645,7 @@ window.STD_EXTRA = {
       "prices": [
         {
           "page": 11,
-          "listinoName": "Sportfloor Cleaner",
+          "listinoName": "SportFloor Cleaner",
           "rows": [
             {
               "confezione": "3x5 L",
@@ -2801,7 +2797,7 @@ window.STD_EXTRA = {
       "prices": [
         {
           "page": 11,
-          "listinoName": "SportFloor Remover",
+          "listinoName": "Sportfloor Remover",
           "rows": [
             {
               "confezione": "1 L",
@@ -3191,7 +3187,7 @@ window.STD_EXTRA = {
       "prices": [
         {
           "page": 6,
-          "listinoName": "Tovcol MS START",
+          "listinoName": "Tovcol MS Start",
           "rows": [
             {
               "confezione": "44x15 kg",
@@ -3205,7 +3201,7 @@ window.STD_EXTRA = {
         },
         {
           "page": 6,
-          "listinoName": "Tovcol MS START",
+          "listinoName": "Tovcol MS Start",
           "rows": [
             {
               "confezione": "in sacchetti 44x15 kg",
@@ -3692,9 +3688,7 @@ window.STD_EXTRA = {
       ],
       "image": "assets/product-images/wpc-cover-it-rev04.webp"
     },
-    "base-uv-it-rev02": {
-      "image": "assets/product-images/base-uv-it-rev02.webp"
-    },
+    "base-uv-it-rev02": {},
     "color-plus-it-rev01": {
       "image": "assets/product-images/color-plus-it-rev01.webp"
     },
@@ -3728,9 +3722,7 @@ window.STD_EXTRA = {
     "fugante-per-lvt-it-rev01": {
       "image": "assets/product-images/fugante-per-lvt-it-rev01.webp"
     },
-    "smalto-pu-it-rev02": {
-      "image": "assets/product-images/smalto-pu-it-rev02.webp"
-    },
+    "smalto-pu-it-rev02": {},
     "granfondo-np-it-rev05": {
       "image": "assets/product-images/granfondo-np-it-rev05.webp"
     },
@@ -3791,9 +3783,7 @@ window.STD_EXTRA = {
     "pasta-color-a-w": {
       "image": "assets/product-images/pasta-color-a-w.webp"
     },
-    "pasta-color-co-it-rev04": {
-      "image": "assets/product-images/pasta-color-co-it-rev04.webp"
-    },
+    "pasta-color-co-it-rev04": {},
     "poliblock-it-rev01": {
       "image": "assets/product-images/poliblock-it-rev01.webp"
     },
@@ -3803,9 +3793,7 @@ window.STD_EXTRA = {
     "prontostucco-rs-40-it-rev02": {
       "image": "assets/product-images/prontostucco-rs-40-it-rev02.webp"
     },
-    "resinal-wax-matt-it-rev01": {
-      "image": "assets/product-images/resinal-wax-matt-it-rev01.webp"
-    },
+    "resinal-wax-matt-it-rev01": {},
     "riflex-b12-it-rev02": {
       "image": "assets/product-images/riflex-b12-it-rev02.webp"
     },
@@ -3845,8 +3833,6 @@ window.STD_EXTRA = {
     "xilolak-it-rev05": {
       "image": "assets/product-images/xilolak-it-rev05.webp"
     },
-    "stucco-modostuc": {
-      "image": "assets/product-images/stucco-modostuc.webp"
-    }
+    "stucco-modostuc": {}
   }
 };

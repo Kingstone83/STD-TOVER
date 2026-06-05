@@ -209,8 +209,8 @@
       return;
     }
     els.productList.innerHTML = products.map((product) => `
-      <button class="product-card ${state.selectedId === product.id ? "active" : ""}" type="button" data-product-id="${escapeHtml(product.id)}">
-        <img src="${escapeHtml(productExtra(product).image || "")}" alt="${escapeHtml(product.name)}" loading="lazy">
+      <button class="product-card ${state.selectedId === product.id ? "active" : ""} ${productExtra(product).image ? "" : "no-image"}" type="button" data-product-id="${escapeHtml(product.id)}">
+        ${productExtra(product).image ? `<img src="${escapeHtml(productExtra(product).image)}" alt="${escapeHtml(product.name)}" loading="lazy">` : ""}
         <div>
           <strong>${escapeHtml(product.name)}</strong>
           <span>${escapeHtml(product.subtitle || product.source)}</span>
@@ -264,7 +264,7 @@
       .join("");
 
     els.productDetail.innerHTML = `
-      <header class="detail-title detail-with-image">
+      <header class="detail-title ${productExtra(product).image ? "detail-with-image" : ""}">
         <div>
           <div class="pill-row">
             <span class="pill">${escapeHtml(product.category)}</span>
@@ -275,7 +275,7 @@
           <p>${escapeHtml(product.subtitle)}</p>
           <p class="source-line">Fonte PDF: ${escapeHtml(product.relativeFolder === "." ? product.source : `${product.relativeFolder}/${product.source}`)}</p>
         </div>
-        <img class="product-photo" src="${escapeHtml(productExtra(product).image || "")}" alt="${escapeHtml(product.name)}">
+        ${productExtra(product).image ? `<img class="product-photo" src="${escapeHtml(productExtra(product).image)}" alt="${escapeHtml(product.name)}">` : ""}
       </header>
       <div class="field-grid">${renderPrices(product)}${fields || `<div class="empty-state">Nessun campo operativo rilevato automaticamente.</div>`}</div>
       <pre class="full-text">${escapeHtml(product.text.slice(0, 5000))}</pre>
