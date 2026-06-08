@@ -4,6 +4,7 @@ const state = {
   filter: "all",
   category: "all",
   query: "",
+  mobileView: "search",
 };
 
 const el = {
@@ -24,6 +25,8 @@ const el = {
   downloadButton: document.querySelector("#downloadButton"),
   openButton: document.querySelector("#openButton"),
   filters: document.querySelectorAll(".filter"),
+  mobileTabs: document.querySelectorAll(".mobile-tab"),
+  backButton: document.querySelector("#backButton"),
 };
 
 init();
@@ -42,6 +45,7 @@ async function init() {
     el.countBadge.textContent = `${state.items.length} PDF`;
     populateCategories();
     bindEvents();
+    setMobileView("search");
     render();
   } catch (error) {
     el.resultMeta.textContent = "Indice non trovato. Esegui npm run sync.";
@@ -72,6 +76,12 @@ function bindEvents() {
     }
   });
 
+  el.backButton.addEventListener("click", () => setMobileView("search"));
+
+  for (const button of el.mobileTabs) {
+    button.addEventListener("click", () => setMobileView(button.dataset.mobileView));
+  }
+
   for (const button of el.filters) {
     button.addEventListener("click", () => {
       state.filter = button.dataset.filter;
@@ -80,6 +90,17 @@ function bindEvents() {
       }
       render();
     });
+  }
+}
+
+function setMobileView(view) {
+  state.mobileView = view === "viewer" ? "viewer" : "search";
+  document.body.dataset.mobileView = state.mobileView;
+
+  for (const button of el.mobileTabs) {
+    const isActive = button.dataset.mobileView === state.mobileView;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
   }
 }
 
@@ -331,6 +352,14 @@ function selectItem(id) {
   for (const button of el.results.querySelectorAll(".result-item")) {
     button.classList.toggle("is-selected", button.dataset.id === id);
   }
+
+  if (isMobileLayout()) {
+    setMobileView("viewer");
+  }
+}
+
+function isMobileLayout() {
+  return window.matchMedia("(max-width: 760px)").matches;
 }
 
 function showPdfFrame(url) {
