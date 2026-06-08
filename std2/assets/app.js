@@ -1,10 +1,8 @@
 const state = {
   items: [],
   activeId: null,
-  filter: "all",
   category: "all",
   query: "",
-  mobileView: "search",
 };
 
 const el = {
@@ -17,23 +15,11 @@ const el = {
   advisorAnswer: document.querySelector("#advisorAnswer"),
   resultMeta: document.querySelector("#resultMeta"),
   results: document.querySelector("#results"),
-  viewerFolder: document.querySelector("#viewerFolder"),
-  viewerName: document.querySelector("#viewerName"),
-  previewWrap: document.querySelector("#previewWrap"),
-  previewImage: document.querySelector("#previewImage"),
-  pdfFrame: document.querySelector("#pdfFrame"),
-  downloadButton: document.querySelector("#downloadButton"),
-  openButton: document.querySelector("#openButton"),
-  filters: document.querySelectorAll(".filter"),
-  mobileTabs: document.querySelectorAll(".mobile-tab"),
-  backButton: document.querySelector("#backButton"),
 };
 
 init();
 
 async function init() {
-  setButtonsEnabled(false);
-
   try {
     const response = await fetch("data/index.json", { cache: "no-store" });
     if (!response.ok) {
@@ -45,7 +31,6 @@ async function init() {
     el.countBadge.textContent = `${state.items.length} PDF`;
     populateCategories();
     bindEvents();
-    setMobileView("search");
     render();
   } catch (error) {
     el.resultMeta.textContent = "Indice non trovato. Esegui npm run sync.";
@@ -76,32 +61,6 @@ function bindEvents() {
     }
   });
 
-  el.backButton.addEventListener("click", () => setMobileView("search"));
-
-  for (const button of el.mobileTabs) {
-    button.addEventListener("click", () => setMobileView(button.dataset.mobileView));
-  }
-
-  for (const button of el.filters) {
-    button.addEventListener("click", () => {
-      state.filter = button.dataset.filter;
-      for (const filter of el.filters) {
-        filter.classList.toggle("is-active", filter === button);
-      }
-      render();
-    });
-  }
-}
-
-function setMobileView(view) {
-  state.mobileView = view === "viewer" ? "viewer" : "search";
-  document.body.dataset.mobileView = state.mobileView;
-
-  for (const button of el.mobileTabs) {
-    const isActive = button.dataset.mobileView === state.mobileView;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
-  }
 }
 
 function answerAdvisor() {
@@ -270,11 +229,15 @@ function render() {
 
   el.results.innerHTML = matches.map(renderResult).join("");
   for (const button of el.results.querySelectorAll(".result-item")) {
-    button.addEventListener("click", () => selectItem(button.dataset.id));
+    button.addEventListener("click", () => toggleItem(button.dataset.id));
   }
 
-  if (!state.activeId && matches.length === 1) {
-    selectItem(matches[0].id);
+  for (const image of el.results.querySelectorAll(".inline-preview-image")) {
+    image.addEventListener("error", () => {
+      const frame = image.parentElement.querySelector(".inline-pdf-frame");
+      image.classList.add("is-hidden");
+      frame.classList.remove("is-hidden");
+    });
   }
 }
 
@@ -284,8 +247,6 @@ function getMatches() {
 
   return state.items
     .filter((item) => {
-      if (state.filter === "current" && item.isOutOfList) return false;
-      if (state.filter === "out" && !item.isOutOfList) return false;
       if (state.category !== "all" && item.category !== state.category) return false;
       if (!terms.length) return true;
       const haystack = normalize(`${item.title} ${item.fileName} ${item.folder} ${item.category ?? ""} ${item.revision ?? ""} ${item.searchText ?? ""}`);
@@ -303,75 +264,82 @@ function renderResult(item) {
     item.folder,
   ].filter(Boolean);
   const snippet = getSnippet(item);
-  const tagClass = item.isOutOfList ? "tag out" : "tag";
-  const tagText = item.isOutOfList ? "Fuori" : "STD";
+  const tagClass = "tag";
+  const tagText = "PDF";
+  const url = encodeURI(item.path);
+  const previewUrl = item.previewPath ? encodeURI(item.previewPath) : "";
 
   return `
-    <button class="result-item${isSelected ? " is-selected" : ""}" type="button" data-id="${escapeHtml(item.id)}">
-      <span>
-        <span class="result-name">${highlight(item.title)}</span>
-        <span class="result-details">${details.map((detail) => `<span>${detail}</span>`).join("")}</span>
-        ${snippet ? `<span class="result-snippet">${highlight(snippet)}</span>` : ""}
-      </span>
-      <span class="${tagClass}">${tagText}</span>
-    </button>
+    <article class="result-card${isSelected ? " is-selected" : ""}">
+      <button class="result-item" type="button" data-id="${escapeHtml(item.id)}" aria-expanded="${isSelected}">
+        <span class="result-main">
+          <span class="result-name">${highlight(item.title)}</span>
+          <span class="result-details">${details.map((detail) => `<span>${detail}</span>`).join("")}</span>
+          ${snippet ? `<span class="result-snippet">${highlight(snippet)}</span>` : ""}
+        </span>
+        <span class="result-side">
+          <span class="${tagClass}">${tagText}</span>
+          <span class="chevron" aria-hidden="true"></span>
+        </span>
+      </button>
+      ${
+        isSelected
+          ? `
+            <div class="inline-viewer" id="scheda-${escapeHtml(item.id)}">
+              <div class="inline-viewer-bar">
+                <div>
+                  <p>${escapeHtml(item.folder || "STD")}</p>
+                  <strong>${escapeHtml(item.title)}</strong>
+                </div>
+                <div class="inline-actions">
+                  <a class="icon-button" href="${url}" target="_blank" rel="noreferrer" aria-label="Apri in nuova finestra" title="Apri">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                      <path d="M15 3h6v6m-1-5-9 9M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
+                    </svg>
+                  </a>
+                  <a class="download-button" href="${url}" download="${escapeHtml(item.fileName)}">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                      <path d="M12 3v12m0 0 5-5m-5 5-5-5M4 21h16" />
+                    </svg>
+                    Scarica
+                  </a>
+                </div>
+              </div>
+              <div class="inline-preview">
+                ${
+                  previewUrl
+                    ? `<img class="inline-preview-image" src="${previewUrl}" alt="Anteprima scheda tecnica ${escapeHtml(item.title)}" />`
+                    : ""
+                }
+                <iframe class="inline-pdf-frame${previewUrl ? " is-hidden" : ""}" src="${url}#view=FitH" title="Anteprima scheda tecnica ${escapeHtml(item.title)}"></iframe>
+              </div>
+            </div>
+          `
+          : ""
+      }
+    </article>
   `;
 }
 
+function toggleItem(id) {
+  selectItem(state.activeId === id ? null : id);
+}
+
 function selectItem(id) {
+  if (!id) {
+    state.activeId = null;
+    render();
+    return;
+  }
+
   const item = state.items.find((candidate) => candidate.id === id);
   if (!item) return;
 
   state.activeId = id;
-  document.body.classList.add("has-selection");
-  el.viewerFolder.textContent = item.folder || "STD";
-  el.viewerName.textContent = item.title;
+  render();
 
-  const url = encodeURI(item.path);
-  const previewUrl = item.previewPath ? encodeURI(item.previewPath) : "";
-
-  if (previewUrl) {
-    el.previewImage.dataset.expected = previewUrl;
-    el.previewImage.onerror = () => {
-      if (el.previewImage.dataset.expected !== previewUrl) return;
-      showPdfFrame(url);
-    };
-    el.previewImage.src = previewUrl;
-    el.previewImage.classList.remove("is-hidden");
-    el.pdfFrame.classList.add("is-hidden");
-    el.pdfFrame.removeAttribute("src");
-  } else {
-    showPdfFrame(url);
-  }
-
-  el.openButton.href = url;
-  el.downloadButton.href = url;
-  el.downloadButton.download = item.fileName;
-  setButtonsEnabled(true);
-
-  for (const button of el.results.querySelectorAll(".result-item")) {
-    button.classList.toggle("is-selected", button.dataset.id === id);
-  }
-
-  if (isMobileLayout()) {
-    setMobileView("viewer");
-  }
-}
-
-function isMobileLayout() {
-  return window.matchMedia("(max-width: 760px)").matches;
-}
-
-function showPdfFrame(url) {
-  el.previewImage.removeAttribute("src");
-  el.previewImage.classList.add("is-hidden");
-  el.pdfFrame.src = `${url}#view=FitH`;
-  el.pdfFrame.classList.remove("is-hidden");
-}
-
-function setButtonsEnabled(enabled) {
-  el.openButton.setAttribute("aria-disabled", String(!enabled));
-  el.downloadButton.setAttribute("aria-disabled", String(!enabled));
+  const openCard = el.results.querySelector(".result-card.is-selected");
+  openCard?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function highlight(value) {
