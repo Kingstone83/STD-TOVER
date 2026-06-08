@@ -38,6 +38,7 @@ a {
   display: grid;
   grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);
   gap: 18px;
+  height: 100vh;
   min-height: 100vh;
   padding: 18px;
 }
@@ -52,6 +53,7 @@ a {
 .search-panel {
   display: flex;
   flex-direction: column;
+  height: calc(100vh - 36px);
   min-height: calc(100vh - 36px);
   border-radius: 8px;
   overflow: hidden;
@@ -414,6 +416,7 @@ svg {
 .viewer-panel {
   display: flex;
   flex-direction: column;
+  height: calc(100vh - 36px);
   min-height: calc(100vh - 36px);
   border-radius: 8px;
   overflow: hidden;
@@ -548,40 +551,40 @@ mark {
 }
 
 @media (max-width: 900px) {
+  body {
+    overflow-x: auto;
+  }
+
   .app-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: 340px minmax(520px, 1fr);
+    height: 100vh;
+    min-width: 880px;
     padding: 10px;
+    gap: 10px;
   }
 
   .search-panel,
   .viewer-panel {
-    min-height: auto;
-  }
-
-  .search-panel {
-    max-height: 58vh;
-  }
-
-  .viewer-panel {
-    height: 72vh;
+    height: calc(100vh - 20px);
+    min-height: calc(100vh - 20px);
   }
 
   .viewer-header {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
+    flex-direction: row;
   }
 
   h2 {
-    max-width: 100%;
-    white-space: normal;
+    max-width: 300px;
+    white-space: nowrap;
   }
 
   .viewer-actions {
-    width: 100%;
+    width: auto;
   }
 
   .download-button {
-    flex: 1;
+    flex: none;
   }
 }
 
@@ -599,8 +602,8 @@ mark {
   }
 
   .brand {
-    flex-direction: column;
-    gap: 10px;
+    flex-direction: row;
+    gap: 12px;
   }
 
   .search-box {
@@ -608,10 +611,19 @@ mark {
   }
 
   .toolbar {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .result-item {
     padding-left: 14px;
+  }
+
+  h1 {
+    font-size: 25px;
+  }
+
+  .count {
+    padding: 7px 9px;
+    font-size: 12px;
   }
 }
