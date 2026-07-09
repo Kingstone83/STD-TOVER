@@ -33,7 +33,6 @@
     temperatura: "Temperatura / umidità",
     pulizia: "Pulizia",
     note_limiti: "Note e limiti",
-    prezzi: "Prezzi / listino",
   };
 
   const topicTerms = {
@@ -45,37 +44,10 @@
     temperatura: ["temperatura", "gelo", "umidita", "u.r", "°c"],
     pulizia: ["pulizia", "pulire", "lavaggio", "attrezzi", "residui", "stripcoll"],
     note_limiti: ["non", "evitare", "note", "limiti", "idoneo", "attenzione", "avvertenze"],
-    prezzi: ["prezzo", "prezzi", "listino", "costo", "costa", "euro", "€", "confezione", "confezioni"],
   };
 
   function productExtra(product) {
     return extraData.products?.[product.id] || {};
-  }
-
-  function priceText(product) {
-    const prices = productExtra(product).prices || [];
-    return prices.flatMap((match) => {
-      const rows = match.rows || [];
-      if (!rows.length) return match.excerpt || [];
-      return rows.map((row) => `${match.listinoName}: ${row.confezione} € ${row.prezzo}/${row.unita || "unità"}`);
-    }).join(" ");
-  }
-
-  function formatPriceRow(row) {
-    const unit = row.unita ? `/${escapeHtml(row.unita)}` : "";
-    const pack = row.confezione ? `<span>${escapeHtml(row.confezione)}</span>` : "<span>Confezione non isolata</span>";
-    return `<li>${pack}<strong>€ ${escapeHtml(row.prezzo)}${unit}</strong></li>`;
-  }
-
-  function priceSnippets(product) {
-    const prices = productExtra(product).prices || [];
-    return prices.map((match) => {
-      const rows = match.rows || [];
-      const rowText = rows.length
-        ? rows.map((row) => `${row.confezione}: € ${row.prezzo}/${row.unita || "unità"}`).join("; ")
-        : (match.excerpt || []).join(" ");
-      return `${match.listinoName} - listino prezzi 2026, pagina ${match.page}: ${rowText}`;
-    });
   }
 
   function normalize(value) {
@@ -101,7 +73,6 @@
       product.subtitle,
       product.category,
       product.source,
-      priceText(product),
       product.text,
     ].join(" "));
   }
@@ -137,10 +108,9 @@
     });
     topics.forEach((topic) => {
       (topicTerms[topic] || []).forEach((term) => {
-        if (haystack.includes(normalize(term))) score += 0.8;
+      if (haystack.includes(normalize(term))) score += 0.8;
       });
       if ((product.fields[topic] || []).length) score += 8;
-      if (topic === "prezzi" && (productExtra(product).prices || []).length) score += 35;
     });
     return score;
   }
@@ -161,7 +131,6 @@
 
   function snippetsFor(product, query, topics) {
     const fieldSnippets = topics.flatMap((topic) => {
-      if (topic === "prezzi") return priceSnippets(product).slice(0, 4);
       return (product.fields[topic] || []).slice(0, 2);
     });
     const candidates = product.fragments
@@ -216,31 +185,10 @@
           <span>${escapeHtml(product.subtitle || product.source)}</span>
           <div class="pill-row">
             <span class="pill">${escapeHtml(product.category)}</span>
-            ${(productExtra(product).prices || []).length ? `<span class="pill price">Listino</span>` : ""}
             ${product.fuoriListino ? `<span class="pill warn">Fuori listino</span>` : ""}
           </div>
         </div>
       </button>
-    `).join("");
-  }
-
-  function renderPrices(product) {
-    const prices = productExtra(product).prices || [];
-    if (!prices.length) {
-      return `
-        <section class="field-card price-card">
-          <h3>Prezzi / listino</h3>
-          <p>Prezzo non trovato nel listino collegato.</p>
-        </section>`;
-    }
-    return prices.map((match) => `
-      <section class="field-card price-card">
-        <h3>${escapeHtml(match.listinoName)}</h3>
-        <ul class="price-list">
-          ${(match.rows || []).map(formatPriceRow).join("") || `<li><span>${escapeHtml((match.excerpt || []).join(" "))}</span></li>`}
-        </ul>
-        <p class="source-line">${escapeHtml(extraData.priceList?.name || "Listino prezzi")} - pagina ${escapeHtml(match.page)}</p>
-      </section>
     `).join("");
   }
 
@@ -268,7 +216,6 @@
         <div>
           <div class="pill-row">
             <span class="pill">${escapeHtml(product.category)}</span>
-            ${(productExtra(product).prices || []).length ? `<span class="pill price">Listino 2026</span>` : ""}
             ${product.fuoriListino ? `<span class="pill warn">Fuori listino</span>` : ""}
           </div>
           <h2>${escapeHtml(product.name)}</h2>
@@ -277,7 +224,7 @@
         </div>
         ${productExtra(product).image ? `<img class="product-photo" src="${escapeHtml(productExtra(product).image)}" alt="${escapeHtml(product.name)}">` : ""}
       </header>
-      <div class="field-grid">${renderPrices(product)}${fields || `<div class="empty-state">Nessun campo operativo rilevato automaticamente.</div>`}</div>
+      <div class="field-grid">${fields || `<div class="empty-state">Nessun campo operativo rilevato automaticamente.</div>`}</div>
       <pre class="full-text">${escapeHtml(product.text.slice(0, 5000))}</pre>
     `;
   }
@@ -321,36 +268,58 @@
     });
   }
 
+  function exactProductsInQuestion(question) {
+    const norm = normalize(question);
+    return data.products.filter((product) => {
+      const name = normalize(product.name);
+      return name.length > 2 && norm.includes(name);
+    });
+  }
+
+  function consultationConfidence(question, scored) {
+    const exact = exactProductsInQuestion(question);
+    const top = scored[0];
+    const second = scored[1];
+    const topScore = top?.score || 0;
+    const secondScore = second?.score || 0;
+    const hasClearName = exact.some((product) => product.id === top?.product.id);
+    const clearGap = topScore >= 45 && topScore >= secondScore * 1.25;
+    return {
+      exact,
+      hasClearName,
+      topScore,
+      secondScore,
+      safe: hasClearName || clearGap,
+    };
+  }
+
+  function hasOutdoorWoodContext(question) {
+    const norm = normalize(question);
+    return ["decking", "bordo piscina", "esterno", "terrazzo", "oil4sun", "pro deck", "legno esterno"].some((term) => norm.includes(normalize(term)));
+  }
+
   function cycleProducts(question, scored) {
     const norm = normalize(question);
     const matched = scored.map((item) => item.product);
     const main = matched[0];
-    const exteriorWood = ["decking", "bordo piscina", "esterno", "terrazzo", "oil4sun", "pro deck", "legno esterno"].some((term) => norm.includes(normalize(term)));
-    if (exteriorWood) {
+    if (hasOutdoorWoodContext(question)) {
       const treatmentName = main?.name === "Pro-Deck" || norm.includes("pro deck") ? "Pro-Deck" : "Oil4Sun";
       const treatment = productByName(treatmentName) || main;
       return {
+        rule: "Legno esterno / decking",
         main: treatment,
         preparation: uniqueProducts(["Re-Wood", "Grey Free"].map(productByName)),
         treatment: uniqueProducts([treatment]),
         maintenance: uniqueProducts(["Deck-Soap"].map(productByName)),
       };
     }
-    const outdoorCycle = [];
-    const products = uniqueProducts([...outdoorCycle, ...matched]);
-    const preparation = uniqueProducts(products.filter((product) => (
-      /detergenza|primer|sottofondi|sub-floors|diluenti/i.test(product.category)
-      || ["re-wood", "grey-free"].includes(product.id)
-    ))).filter((product) => product.id !== main?.id).slice(0, 3);
-    const treatment = uniqueProducts([
+    return {
+      rule: "",
       main,
-      ...products.filter((product) => /vernici|finiture|adesivi|sigillanti|resina/i.test(product.category)),
-    ]).slice(0, 3);
-    const maintenance = uniqueProducts(products.filter((product) => (
-      /detergenza|manutenzione/i.test(product.category)
-      || ["deck-soap", "pulito-parquet", "deteroil"].some((id) => product.id.includes(id))
-    ))).filter((product) => product.id !== main?.id && !preparation.some((prep) => prep.id === product.id)).slice(0, 3);
-    return { main, preparation, treatment, maintenance };
+      preparation: [],
+      treatment: uniqueProducts([main]),
+      maintenance: [],
+    };
   }
 
   function formatProductList(products, fallback) {
@@ -367,16 +336,31 @@
 
   function photoRequest(question) {
     const norm = normalize(question);
-    const diagnosticTerms = ["macchia", "difetto", "ingrigito", "rovinato", "problema", "alone", "stacc", "umidita", "bordo piscina", "decking", "esterno"];
+    const diagnosticTerms = ["macchia", "difetto", "ingrigito", "rovinato", "problema", "alone", "stacc", "umidita", "bordo piscina", "decking", "esterno", "non so", "consiglio"];
     if (!diagnosticTerms.some((term) => norm.includes(normalize(term)))) return "";
     return "Per formulare una valutazione definitiva è utile richiedere essenza del legno, stato attuale del supporto e fotografie: una panoramica, un dettaglio ravvicinato e, se possibile, una foto in controluce.";
   }
 
   function renderBackOfficeReply(question, scored, topics) {
+    const confidence = consultationConfidence(question, scored);
+    if (!confidence.safe) {
+      const candidates = scored.slice(0, 3).map(({ product }) => productLink(product)).join(", ");
+      return `
+        <article class="answer-card backoffice-card caution-card">
+          <h3>Consulenza non ancora sicura</h3>
+          <div class="backoffice-reply">
+            <p>Non preparo una risposta definitiva perché la richiesta non identifica con sufficiente chiarezza il prodotto o il ciclo tecnico.</p>
+            <p><strong>Prodotti forse pertinenti:</strong> ${candidates || "nessun prodotto chiaro"}.</p>
+            <p><strong>Prima di rispondere al cliente chiedere:</strong> prodotto già usato o desiderato, tipo di supporto, interno/esterno, stato attuale della superficie, destinazione d’uso e fotografie panoramica/dettaglio.</p>
+            <p class="source-line">Questo blocco evita risposte inventate: usare i riferimenti tecnici sotto solo come consultazione interna.</p>
+          </div>
+        </article>`;
+    }
     const cycle = cycleProducts(question, scored);
     const main = cycle.main;
     const topicLabel = topics.map((topic) => fieldLabels[topic] || "argomento tecnico").join(", ");
     const photoLine = photoRequest(question);
+    const hasCycle = cycle.preparation.length || cycle.maintenance.length || cycle.rule;
     return `
       <article class="answer-card backoffice-card">
         <h3>Bozza risposta Back Office</h3>
@@ -384,12 +368,16 @@
           <p>Gentile Cliente,</p>
           <p>la ringraziamo per averci contattato. In merito alla sua richiesta, dai riferimenti presenti nelle schede tecniche indicizzate il prodotto più pertinente è ${productLink(main)}.</p>
           <p><strong>Valutazione tecnica:</strong> ${productLead(main)}</p>
-          <p><strong>Ciclo consigliato:</strong></p>
-          <ul class="cycle-list">
-            <li><strong>Preparazione del supporto:</strong> ${formatProductList(cycle.preparation, "verificare che il supporto sia pulito, asciutto, coerente e conforme alle indicazioni della scheda tecnica prima dell'applicazione.")}</li>
-            <li><strong>Trattamento principale:</strong> ${formatProductList(cycle.treatment, "applicare il prodotto indicato attenendosi a resa, tempi e modalità riportati in scheda tecnica.")}</li>
-            <li><strong>Manutenzione periodica:</strong> ${formatProductList(cycle.maintenance, "usare un prodotto di manutenzione Tover coerente con il ciclo applicato e con la destinazione d'uso.")}</li>
-          </ul>
+          ${hasCycle ? `
+            <p><strong>Ciclo consigliato${cycle.rule ? ` (${escapeHtml(cycle.rule)})` : ""}:</strong></p>
+            <ul class="cycle-list">
+              <li><strong>Preparazione del supporto:</strong> ${formatProductList(cycle.preparation, "verificare che il supporto sia pulito, asciutto, coerente e conforme alle indicazioni della scheda tecnica prima dell'applicazione.")}</li>
+              <li><strong>Trattamento principale:</strong> ${formatProductList(cycle.treatment, "applicare il prodotto indicato attenendosi a resa, tempi e modalità riportati in scheda tecnica.")}</li>
+              <li><strong>Manutenzione periodica:</strong> ${formatProductList(cycle.maintenance, "indicare un prodotto di manutenzione solo dopo aver confermato finitura e destinazione d’uso.")}</li>
+            </ul>
+          ` : `
+            <p><strong>Ciclo completo:</strong> non indicarlo automaticamente. Per questa richiesta la scheda permette di parlare del prodotto, ma servono supporto, stato del pavimento e finitura desiderata per consigliare preparazione e manutenzione.</p>
+          `}
           <p><strong>Canale di acquisto:</strong> ${escapeHtml(customerChannel(question))}</p>
           ${photoLine ? `<p><strong>Informazioni utili:</strong> ${escapeHtml(photoLine)}</p>` : ""}
           <p class="source-line">Argomento rilevato: ${escapeHtml(topicLabel)}. La bozza usa solo dati presenti nelle schede indicizzate; verificare sempre eventuali condizioni di cantiere non descritte dal cliente.</p>
@@ -506,8 +494,7 @@
   }
 
   function init() {
-    const pricedCount = extraData.pricedProductCount ? `, ${extraData.pricedProductCount} con prezzo` : "";
-    els.dataStatus.textContent = `${data.productCount || data.products.length} prodotti indicizzati${pricedCount}`;
+    els.dataStatus.textContent = `${data.productCount || data.products.length} schede tecniche indicizzate`;
     renderCategories();
     renderProducts();
     bindEvents();

@@ -347,11 +347,6 @@ textarea {
   color: var(--amber);
 }
 
-.pill.price {
-  background: var(--soft);
-  color: #4a423c;
-}
-
 .product-detail {
   padding: 20px;
   min-height: 520px;
@@ -418,32 +413,6 @@ textarea {
   line-height: 1.5;
 }
 
-.price-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.price-list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  min-height: 34px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: #f6f5f3;
-  color: #3b332e;
-  font-size: 14px;
-}
-
-.price-list strong {
-  white-space: nowrap;
-  color: var(--accent-strong);
-}
-
 .source-line {
   margin-top: 10px;
   color: var(--muted);
@@ -461,6 +430,11 @@ textarea {
 
 .backoffice-card {
   border-color: rgba(238, 109, 47, 0.45);
+}
+
+.caution-card {
+  border-color: #d8a21a;
+  background: #fffaf0;
 }
 
 .backoffice-reply {
