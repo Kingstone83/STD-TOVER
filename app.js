@@ -292,11 +292,117 @@
     return safe;
   }
 
+  function productByName(name) {
+    const normName = normalize(name);
+    return data.products.find((product) => normalize(product.name) === normName);
+  }
+
+  function productLead(product) {
+    const detail = product.fields.uso_impiego?.[0] || product.fields.preparazione?.[0] || product.subtitle || product.source;
+    return escapeHtml(String(detail)
+      .replace(/\bCertificazioni\b/gi, "")
+      .replace(/\bModalità d[’']uso\b/gi, "")
+      .replace(/\bModalità di applicazione\b/gi, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 260));
+  }
+
+  function productLink(product) {
+    return `<button class="inline-product" type="button" data-product-id="${escapeHtml(product.id)}">${escapeHtml(product.name)}</button>`;
+  }
+
+  function uniqueProducts(products) {
+    const seen = new Set();
+    return products.filter((product) => {
+      if (!product || seen.has(product.id)) return false;
+      seen.add(product.id);
+      return true;
+    });
+  }
+
+  function cycleProducts(question, scored) {
+    const norm = normalize(question);
+    const matched = scored.map((item) => item.product);
+    const main = matched[0];
+    const exteriorWood = ["decking", "bordo piscina", "esterno", "terrazzo", "oil4sun", "pro deck", "legno esterno"].some((term) => norm.includes(normalize(term)));
+    if (exteriorWood) {
+      const treatmentName = main?.name === "Pro-Deck" || norm.includes("pro deck") ? "Pro-Deck" : "Oil4Sun";
+      const treatment = productByName(treatmentName) || main;
+      return {
+        main: treatment,
+        preparation: uniqueProducts(["Re-Wood", "Grey Free"].map(productByName)),
+        treatment: uniqueProducts([treatment]),
+        maintenance: uniqueProducts(["Deck-Soap"].map(productByName)),
+      };
+    }
+    const outdoorCycle = [];
+    const products = uniqueProducts([...outdoorCycle, ...matched]);
+    const preparation = uniqueProducts(products.filter((product) => (
+      /detergenza|primer|sottofondi|sub-floors|diluenti/i.test(product.category)
+      || ["re-wood", "grey-free"].includes(product.id)
+    ))).filter((product) => product.id !== main?.id).slice(0, 3);
+    const treatment = uniqueProducts([
+      main,
+      ...products.filter((product) => /vernici|finiture|adesivi|sigillanti|resina/i.test(product.category)),
+    ]).slice(0, 3);
+    const maintenance = uniqueProducts(products.filter((product) => (
+      /detergenza|manutenzione/i.test(product.category)
+      || ["deck-soap", "pulito-parquet", "deteroil"].some((id) => product.id.includes(id))
+    ))).filter((product) => product.id !== main?.id && !preparation.some((prep) => prep.id === product.id)).slice(0, 3);
+    return { main, preparation, treatment, maintenance };
+  }
+
+  function formatProductList(products, fallback) {
+    if (!products.length) return escapeHtml(fallback);
+    return products.map((product) => `${productLink(product)} - ${productLead(product)}`).join("<br>");
+  }
+
+  function customerChannel(question) {
+    const norm = normalize(question);
+    if (/\bprivat/.test(norm)) return "Trattandosi di un cliente privato, indirizzarlo allo Store Amazon Tover per l'acquisto dei prodotti disponibili.";
+    if (/\bprofessionista|\bposatore|\brivenditore|\bimpresa/.test(norm)) return "Trattandosi di un professionista, prendere in carico la richiesta tramite la rete commerciale Tover di zona.";
+    return "Se il cliente è privato, indirizzarlo allo Store Amazon Tover; se è un professionista, far seguire la richiesta dalla rete commerciale Tover.";
+  }
+
+  function photoRequest(question) {
+    const norm = normalize(question);
+    const diagnosticTerms = ["macchia", "difetto", "ingrigito", "rovinato", "problema", "alone", "stacc", "umidita", "bordo piscina", "decking", "esterno"];
+    if (!diagnosticTerms.some((term) => norm.includes(normalize(term)))) return "";
+    return "Per formulare una valutazione definitiva è utile richiedere essenza del legno, stato attuale del supporto e fotografie: una panoramica, un dettaglio ravvicinato e, se possibile, una foto in controluce.";
+  }
+
+  function renderBackOfficeReply(question, scored, topics) {
+    const cycle = cycleProducts(question, scored);
+    const main = cycle.main;
+    const topicLabel = topics.map((topic) => fieldLabels[topic] || "argomento tecnico").join(", ");
+    const photoLine = photoRequest(question);
+    return `
+      <article class="answer-card backoffice-card">
+        <h3>Bozza risposta Back Office</h3>
+        <div class="backoffice-reply">
+          <p>Gentile Cliente,</p>
+          <p>la ringraziamo per averci contattato. In merito alla sua richiesta, dai riferimenti presenti nelle schede tecniche indicizzate il prodotto più pertinente è ${productLink(main)}.</p>
+          <p><strong>Valutazione tecnica:</strong> ${productLead(main)}</p>
+          <p><strong>Ciclo consigliato:</strong></p>
+          <ul class="cycle-list">
+            <li><strong>Preparazione del supporto:</strong> ${formatProductList(cycle.preparation, "verificare che il supporto sia pulito, asciutto, coerente e conforme alle indicazioni della scheda tecnica prima dell'applicazione.")}</li>
+            <li><strong>Trattamento principale:</strong> ${formatProductList(cycle.treatment, "applicare il prodotto indicato attenendosi a resa, tempi e modalità riportati in scheda tecnica.")}</li>
+            <li><strong>Manutenzione periodica:</strong> ${formatProductList(cycle.maintenance, "usare un prodotto di manutenzione Tover coerente con il ciclo applicato e con la destinazione d'uso.")}</li>
+          </ul>
+          <p><strong>Canale di acquisto:</strong> ${escapeHtml(customerChannel(question))}</p>
+          ${photoLine ? `<p><strong>Informazioni utili:</strong> ${escapeHtml(photoLine)}</p>` : ""}
+          <p class="source-line">Argomento rilevato: ${escapeHtml(topicLabel)}. La bozza usa solo dati presenti nelle schede indicizzate; verificare sempre eventuali condizioni di cantiere non descritte dal cliente.</p>
+          <p>Cordiali saluti,<br>Back Office Italia<br>Tover Srl</p>
+        </div>
+      </article>`;
+  }
+
   function answerQuestion() {
     const question = els.questionInput.value.trim();
     if (!question) {
       els.answerPanel.className = "answer-panel empty-state";
-      els.answerPanel.textContent = "Scrivi una domanda tecnica su utilizzo, resa, posa o modalità di impiego.";
+      els.answerPanel.textContent = "Scrivi una richiesta cliente: l'app preparerà una bozza Back Office con ciclo completo quando tecnicamente pertinente.";
       return;
     }
 
@@ -334,8 +440,9 @@
     els.answerPanel.className = "answer-panel answer-list";
     const topicLabel = topics.map((topic) => fieldLabels[topic] || "argomento tecnico").join(", ");
     els.answerPanel.innerHTML = `
+      ${renderBackOfficeReply(question, scored, topics)}
       <div class="answer-card">
-        <h3>Risposta tecnica</h3>
+        <h3>Riferimenti tecnici dalle schede</h3>
         <p>Ho trovato i riferimenti più pertinenti per <strong>${escapeHtml(topicLabel)}</strong>. Usa i brani sotto come fonte: se un valore non compare nei brani, non va considerato confermato.</p>
       </div>
       ${cards}

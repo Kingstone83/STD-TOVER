@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>STD TOVER</title>
-    <link rel="stylesheet" href="./styles.css?v=tover-brand">
+    <link rel="stylesheet" href="./styles.css?v=back-office">
   </head>
   <body>
     <div class="app-shell">
@@ -32,13 +32,13 @@
         <section class="qa-panel" aria-labelledby="qaTitle">
           <div class="section-heading">
             <div>
-              <h2 id="qaTitle">Assistente tecnico</h2>
-              <p>Risponde usando soltanto le schede PDF indicizzate.</p>
+              <h2 id="qaTitle">Assistente Back Office</h2>
+              <p>Prepara una risposta consulenziale usando soltanto le schede PDF indicizzate.</p>
             </div>
             <button id="resetQuestion" class="quiet-button" type="button">Nuova domanda</button>
           </div>
           <div class="question-grid">
-            <textarea id="questionInput" rows="4" placeholder="Chiedi ad esempio: Qual è la resa di Uniqua SQ? Come si posa Tovcol MS su massetto riscaldante? Quale prodotto è indicato per LVT?"></textarea>
+            <textarea id="questionInput" rows="4" placeholder="Inserisci la richiesta del cliente. Esempio: Oil4Sun è adatto per un decking bordo piscina?"></textarea>
             <div class="action-column">
               <button id="askButton" class="primary-button" type="button">Rispondi</button>
               <select id="topicSelect" aria-label="Filtro argomento">
@@ -54,7 +54,7 @@
             </div>
           </div>
           <div id="answerPanel" class="answer-panel empty-state">
-            Scrivi una domanda tecnica su utilizzo, resa, posa o modalità di impiego.
+            Scrivi una richiesta cliente: l'app preparerà una bozza Back Office con ciclo completo quando tecnicamente pertinente.
           </div>
         </section>
 
@@ -74,8 +74,8 @@
       </main>
     </div>
 
-    <script src="./assets/std-data.js?v=tover-brand"></script>
-    <script src="./assets/std-extra.js?v=tover-brand"></script>
-    <script src="./app.js?v=tover-brand"></script>
+    <script src="./assets/std-data.js?v=back-office"></script>
+    <script src="./assets/std-extra.js?v=back-office"></script>
+    <script src="./app.js?v=back-office"></script>
   </body>
 </html>
