@@ -375,36 +375,40 @@ window.STD_DATA = {
       ],
       "fields": {
         "resa_consumo": [
-          "Densità Sovraverniciatura Resa Temperatura di applicazione Pulizia Attrezzi"
+          "Resa: 20 – 30 m²/litro."
         ],
         "uso_impiego": [
-          "Art Deco Base per parquet – Uniforma e semplifica la finitura Isolante pronto all’uso per pavimenti in legno, sovraverniciabile con vernici a base acqua mono o bicomponenti, oli e vernici a base oleosa. Disponibile nelle versioni: Neutro – incolore, Nature – leggermente sbiancante e Intense – a effetto",
-          "Sovraverniciatura Resa Temperatura di applicazione Pulizia Attrezzi Conservazione",
-          "La versione colorata permette di ottenere facimente colorazioni uniformi anche su grandi superfici. I diversi colori sono miscibili tra loro e possono essere schiariti con Art-Deco neutro. Eventuali ritocchi possono essere fatti entro 24 ore dall’applicazione utilizzando un panno imbevuto di Art-Deco colorato o neutro a seconda delle necessità. Per un effetto schiarente maggiore può essere usato Solver AD.",
-          "Dopo almeno 12 ore dagli eventuali ritocchi procedere alla finitura con il prodotto scelto. Non carteggiare Art-Deco, se necessario carteggiare la prima mano di vernice. Modalità d’uso Tover srl Via Rosa Luxemburg, 2/A | Collegno (TO)",
-          "alcun modo la nostra responsabilità dal momento che le modalità e le condizioni di impiego del prodotto sono al di fuori del nostro controllo. Consigliamo di verificare l'effettiva idoneità all'impiego previsto.",
-          "impiego del prodotto sono al di fuori del nostro controllo. Consigliamo di verificare l'effettiva idoneità all'impiego previsto. Rev 02 – 23/04/2026. Questa scheda annulla e sostituisce la precedente.",
-          "e sostituisce la precedente. Prodotto a uso professionale. Rispettare rigorosamente quanto espresso in etichettatura e consultare la scheda dati di sicurezza prima dell’utilizzo del prodotto. Norme di sicurezza Smaltire il prodotto non utilizzato e le confezioni vuote in conformità con quanto"
+          "Isolante pronto all’uso per pavimenti in legno, sovraverniciabile con vernici a base acqua mono o bicomponenti, oli e vernici a base oleosa.",
+          "Disponibile nelle versioni Neutro incolore, Nature leggermente sbiancante, Intense a effetto tonalizzante e versioni colorate in diverse tinte legno. Tutte le versioni sono miscibili tra loro.",
+          "Adatto a tutte le essenze; assicura i migliori risultati su legni chiari ed assorbenti. Consente di colorare grandi superfici senza rischio di sormonti.",
+          "Art-Deco neutro è usato come primer per regolarizzare l’assorbimento delle vernici a base acqua, in particolare per vernici a effetto naturale o leggermente velate."
         ],
         "posa": [
-          "Art Deco Base per parquet – Uniforma e semplifica la finitura Isolante pronto all’uso per pavimenti in legno, sovraverniciabile con vernici a base acqua mono o bicomponenti, oli e vernici a base oleosa. Disponibile nelle versioni:",
-          "12 mesi in confezioni originali sigillate Barattoli da 1 o 2,5 litri Levigare il parquet al fine di ottenere una superficie esente da oli, grassi, cere o eventuali vecchie vernici. Levigare e stuccare e superficie come di consueto. Completare il ciclo di carteggiatura con grana 100-120."
+          "Applicare Art-Deco con uno stendicera, un panno o una spatola e distribuirlo con monospazzola con disco verde o rosso.",
+          "Dopo almeno 12 ore, senza carteggiare Art-Deco, applicare una mano di vernice, carteggiare con grana 180 – 220 e quindi applicare la seconda mano.",
+          "Dopo eventuali ritocchi attendere almeno 12 ore prima di procedere alla finitura con il prodotto scelto."
         ],
         "preparazione": [
-          "Art-Deco neutro è usato come primer per regolarizzare l’assorbimento delle vernici a base acqua, in particolare per le vernici a effetto naturale o leggermente velate. Dopo almeno 12 ore, senza carteggiare, applicare una mano di vernice, carteggiare con grana 180 – 220, quindi applicare la seconda mano. Per maggiori informazioni vedere la scheda tecnica della vernice utilizzata.",
-          "schiarente maggiore può essere usato Solver AD. Dopo almeno 12 ore dagli eventuali ritocchi procedere alla finitura con il prodotto scelto. Non carteggiare Art-Deco, se necessario carteggiare la prima mano di vernice. Modalità d’uso Tover srl"
+          "Levigare il parquet per ottenere una superficie esente da oli, grassi, cere o eventuali vecchie vernici.",
+          "Levigare e stuccare la superficie come di consueto. Completare il ciclo di carteggiatura con grana 100-120."
         ],
         "tempi": [
-          "Aspetto Densità Sovraverniciatura Resa Temperatura di applicazione"
+          "Sovraverniciatura: minimo 12 ore.",
+          "Eventuali ritocchi possono essere fatti entro 24 ore dall’applicazione. Dopo almeno 12 ore dagli eventuali ritocchi procedere alla finitura."
         ],
         "temperatura": [
-          "Sovraverniciatura Resa Temperatura di applicazione Pulizia Attrezzi Conservazione"
+          "Temperatura di applicazione: da +10 a +35 °C."
         ],
         "pulizia": [
-          "Resa Temperatura di applicazione Pulizia Attrezzi Conservazione Confezioni",
-          "20 – 30 m²/litro Da + 10 a + 35 °C Solvente di Lavaggio S 23 12 mesi in confezioni originali sigillate Barattoli da 1 o 2,5 litri"
+          "Pulizia attrezzi: Solvente di Lavaggio S 23.",
+          "Conservazione: 12 mesi in confezioni originali sigillate.",
+          "Confezioni: barattoli da 1 o 2,5 litri."
         ],
-        "note_limiti": []
+        "note_limiti": [
+          "Non carteggiare Art-Deco; se necessario carteggiare la prima mano di vernice.",
+          "Per un effetto schiarente maggiore può essere usato Solver AD.",
+          "Rev 02 – 23/04/2026. Questa scheda annulla e sostituisce la precedente."
+        ]
       }
     },
     {
