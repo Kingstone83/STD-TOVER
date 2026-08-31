@@ -245,11 +245,18 @@
   }
 
   function productLead(product) {
-    const detail = product.fields.uso_impiego?.[0] || product.fields.preparazione?.[0] || product.subtitle || product.source;
+    const options = [
+      ...(product.fields.uso_impiego || []),
+      ...(product.fields.posa || []),
+      ...(product.fields.preparazione || []),
+      product.subtitle,
+    ].filter(Boolean);
+    const detail = options.find((item) => !/dati tecnici|aspetto|densit|ph|conservazione|confezioni/i.test(item)) || product.subtitle || product.source;
     return escapeHtml(String(detail)
       .replace(/\bCertificazioni\b/gi, "")
       .replace(/\bModalità d[’']uso\b/gi, "")
       .replace(/\bModalità di applicazione\b/gi, "")
+      .replace(/\bDati tecnici[^.]*\./gi, "")
       .replace(/\s+/g, " ")
       .trim()
       .slice(0, 260));
@@ -276,6 +283,23 @@
     });
   }
 
+  function isEnglishQuestion(question) {
+    const norm = normalize(question);
+    const englishHits = ["can you", "where", "buy", "best", "either product", "thanks", "recommend", "ireland"].filter((term) => norm.includes(term)).length;
+    const italianHits = ["cliente", "prodotto", "acquisto", "dove", "consiglia", "grazie", "pavimento"].filter((term) => norm.includes(term)).length;
+    return englishHits > italianHits;
+  }
+
+  function hasPurchaseIntent(question) {
+    const norm = normalize(question);
+    return ["buy", "purchase", "where can", "where to", "acquisto", "acquistare", "comprare", "rivenditore", "distributore", "store", "amazon"].some((term) => norm.includes(normalize(term)));
+  }
+
+  function hasComparisonIntent(question) {
+    const norm = normalize(question);
+    return ["either product", "which product", "which one", "rather than", "instead of", "compare", "comparison", "difference", "better", "prodotto rispetto", "quale prodotto", "quale dei due", "confronto", "meglio", "differenza"].some((term) => norm.includes(normalize(term)));
+  }
+
   function consultationConfidence(question, scored) {
     const exact = exactProductsInQuestion(question);
     const top = scored[0];
@@ -283,13 +307,18 @@
     const topScore = top?.score || 0;
     const secondScore = second?.score || 0;
     const hasClearName = exact.some((product) => product.id === top?.product.id);
-    const clearGap = topScore >= 45 && topScore >= secondScore * 1.25;
+    const knownCycle = hasOutdoorWoodContext(question);
+    const purchaseNeedsProduct = hasPurchaseIntent(question) && !exact.length;
+    const comparisonNeedsProducts = hasComparisonIntent(question) && exact.length < 2 && !knownCycle;
     return {
       exact,
       hasClearName,
       topScore,
       secondScore,
-      safe: hasClearName || clearGap,
+      purchaseNeedsProduct,
+      comparisonNeedsProducts,
+      knownCycle,
+      safe: !purchaseNeedsProduct && !comparisonNeedsProducts && (hasClearName || knownCycle),
     };
   }
 
@@ -327,48 +356,113 @@
     return products.map((product) => `${productLink(product)} - ${productLead(product)}`).join("<br>");
   }
 
-  function customerChannel(question) {
-    const norm = normalize(question);
-    if (/\bprivat/.test(norm)) return "Trattandosi di un cliente privato, indirizzarlo allo Store Amazon Tover per l'acquisto dei prodotti disponibili.";
-    if (/\bprofessionista|\bposatore|\brivenditore|\bimpresa/.test(norm)) return "Trattandosi di un professionista, prendere in carico la richiesta tramite la rete commerciale Tover di zona.";
-    return "Se il cliente è privato, indirizzarlo allo Store Amazon Tover; se è un professionista, far seguire la richiesta dalla rete commerciale Tover.";
+  function formatComparison(products) {
+    return products.slice(0, 3).map((product) => `
+      <li><strong>${productLink(product)}</strong>: ${productLead(product)}</li>
+    `).join("");
   }
 
-  function photoRequest(question) {
+  function customerChannel(question, language) {
+    const norm = normalize(question);
+    const abroad = /\bireland\b|\birlanda\b|\buk\b|\bfrance\b|\bspain\b|\bgermany\b/.test(norm);
+    if (language === "en") {
+      if (abroad) return "For availability in Ireland, the indexed technical sheets do not list retailers or current stock. Please share the product names and your area, and we can help route the request to the appropriate Tover contact or local distributor.";
+      if (/\bprivat/.test(norm)) return "For private purchases, please use the official Tover purchase channels for the products available in your country. If you tell us your location, we can direct you more accurately.";
+      return "For purchase information, please share whether you are a private customer or a professional and your location, so we can indicate the correct Tover channel.";
+    }
+    if (abroad) return "Per disponibilità fuori Italia, le schede tecniche indicizzate non riportano rivenditori o giacenze aggiornate. Indichi i prodotti e la zona: potremo indirizzare la richiesta al contatto Tover o al distributore locale più adatto.";
+    if (/\bprivat/.test(norm)) return "Per clienti privati in Italia, può fare riferimento allo Store Amazon Tover per i prodotti disponibili; per disponibilità specifiche è utile indicare prodotto e zona.";
+    if (/\bprofessionista|\bposatore|\brivenditore|\bimpresa/.test(norm)) return "Per forniture professionali, la richiesta può essere gestita tramite il referente commerciale Tover di zona.";
+    return "Per indicare il canale corretto servono tipologia cliente, zona e prodotto richiesto.";
+  }
+
+  function photoRequest(question, language) {
     const norm = normalize(question);
     const diagnosticTerms = ["macchia", "difetto", "ingrigito", "rovinato", "problema", "alone", "stacc", "umidita", "bordo piscina", "decking", "esterno", "non so", "consiglio"];
     if (!diagnosticTerms.some((term) => norm.includes(normalize(term)))) return "";
+    if (language === "en") return "To give a reliable final recommendation, please send the wood species, current condition of the surface and photos: one general view, one close detail and, if useful, one photo against the light.";
     return "Per formulare una valutazione definitiva è utile richiedere essenza del legno, stato attuale del supporto e fotografie: una panoramica, un dettaglio ravvicinato e, se possibile, una foto in controluce.";
   }
 
   function renderBackOfficeReply(question, scored, topics) {
     const confidence = consultationConfidence(question, scored);
+    const language = isEnglishQuestion(question) ? "en" : "it";
     if (!confidence.safe) {
       const candidates = scored.slice(0, 3).map(({ product }) => productLink(product)).join(", ");
+      const reason = confidence.purchaseNeedsProduct
+        ? (language === "en" ? "The request asks where to buy, but it does not name the products clearly." : "La richiesta riguarda l'acquisto, ma non indica chiaramente i prodotti.")
+        : confidence.comparisonNeedsProducts
+          ? (language === "en" ? "The request refers to a comparison, but the two products are not identified in this message." : "La richiesta sembra chiedere un confronto, ma non identifica i due prodotti da confrontare.")
+          : (language === "en" ? "The product and application context are not clear enough." : "Prodotto e contesto applicativo non sono abbastanza chiari.");
       return `
         <article class="answer-card backoffice-card caution-card">
-          <h3>Consulenza non ancora sicura</h3>
+          <h3>${language === "en" ? "Consultation not safe yet" : "Consulenza non ancora sicura"}</h3>
           <div class="backoffice-reply">
-            <p>Non preparo una risposta definitiva perché la richiesta non identifica con sufficiente chiarezza il prodotto o il ciclo tecnico.</p>
-            <p><strong>Prodotti forse pertinenti:</strong> ${candidates || "nessun prodotto chiaro"}.</p>
-            <p><strong>Prima di rispondere al cliente chiedere:</strong> prodotto già usato o desiderato, tipo di supporto, interno/esterno, stato attuale della superficie, destinazione d’uso e fotografie panoramica/dettaglio.</p>
-            <p class="source-line">Questo blocco evita risposte inventate: usare i riferimenti tecnici sotto solo come consultazione interna.</p>
+            ${language === "en" ? `
+              <p>I would not send a final answer yet. ${escapeHtml(reason)}</p>
+              <p><strong>Possible products detected:</strong> ${candidates || "no clear product"}.</p>
+              <p><strong>Reply to the customer by asking:</strong> which two products they mean, where the project is located in Ireland, whether they are a private customer or professional, and what surface/application the products are for.</p>
+              <p class="source-line">This prevents an invented recommendation. Use the technical references below only for internal checking.</p>
+            ` : `
+              <p>Non preparerei ancora una risposta definitiva. ${escapeHtml(reason)}</p>
+              <p><strong>Prodotti forse pertinenti:</strong> ${candidates || "nessun prodotto chiaro"}.</p>
+              <p><strong>Prima di rispondere al cliente chiedere:</strong> quali prodotti intende confrontare, zona del lavoro, privato o professionista, supporto/applicazione e fotografie se la richiesta riguarda un problema tecnico.</p>
+              <p class="source-line">Questo blocco evita risposte inventate: usare i riferimenti tecnici sotto solo come consultazione interna.</p>
+            `}
           </div>
         </article>`;
     }
     const cycle = cycleProducts(question, scored);
     const main = cycle.main;
     const topicLabel = topics.map((topic) => fieldLabels[topic] || "argomento tecnico").join(", ");
-    const photoLine = photoRequest(question);
+    const photoLine = photoRequest(question, language);
     const hasCycle = cycle.preparation.length || cycle.maintenance.length || cycle.rule;
+    const purchaseOnly = hasPurchaseIntent(question) && !topics.some((topic) => topic !== "uso_impiego");
+    const comparison = hasComparisonIntent(question) && confidence.exact.length >= 2;
+    if (language === "en") {
+      return `
+        <article class="answer-card backoffice-card">
+          <h3>Customer reply draft</h3>
+          <div class="backoffice-reply">
+            <p>Dear Customer,</p>
+            ${comparison ? `
+              <p>thank you for contacting us. The products identified in your request are ${confidence.exact.map(productLink).join(" and ")}.</p>
+              <p><strong>Technical comparison:</strong></p>
+              <ul class="cycle-list">${formatComparison(confidence.exact)}</ul>
+              <p>Based on the technical sheets alone, I would not choose one over the other without confirming the surface, required finish/performance and site conditions.</p>
+            ` : `
+              <p>thank you for contacting us. Based on the indexed technical sheets, the product clearly identified in your request is ${productLink(main)}.</p>
+              ${purchaseOnly ? "" : `<p><strong>Technical assessment:</strong> ${productLead(main)}</p>`}
+            `}
+            ${hasCycle && !purchaseOnly && !comparison ? `
+              <p><strong>Recommended cycle${cycle.rule ? ` (${escapeHtml(cycle.rule)})` : ""}:</strong></p>
+              <ul class="cycle-list">
+                <li><strong>Surface preparation:</strong> ${formatProductList(cycle.preparation, "confirm that the surface is clean, dry, sound and suitable before application.")}</li>
+                <li><strong>Main treatment:</strong> ${formatProductList(cycle.treatment, "apply the selected product according to the application method, yield and timing stated in the technical sheet.")}</li>
+                <li><strong>Routine maintenance:</strong> ${formatProductList(cycle.maintenance, "confirm the finish and use conditions before recommending a maintenance product.")}</li>
+              </ul>
+            ` : ""}
+            <p><strong>Purchase information:</strong> ${escapeHtml(customerChannel(question, language))}</p>
+            ${photoLine ? `<p><strong>Useful information:</strong> ${escapeHtml(photoLine)}</p>` : ""}
+            <p>Kind regards,<br>Back Office Italia<br>Tover Srl</p>
+          </div>
+        </article>`;
+    }
     return `
       <article class="answer-card backoffice-card">
         <h3>Bozza risposta Back Office</h3>
         <div class="backoffice-reply">
           <p>Gentile Cliente,</p>
-          <p>la ringraziamo per averci contattato. In merito alla sua richiesta, dai riferimenti presenti nelle schede tecniche indicizzate il prodotto più pertinente è ${productLink(main)}.</p>
-          <p><strong>Valutazione tecnica:</strong> ${productLead(main)}</p>
-          ${hasCycle ? `
+          ${comparison ? `
+            <p>la ringraziamo per averci contattato. I prodotti identificati nella richiesta sono ${confidence.exact.map(productLink).join(" e ")}.</p>
+            <p><strong>Confronto tecnico:</strong></p>
+            <ul class="cycle-list">${formatComparison(confidence.exact)}</ul>
+            <p>Solo sulla base delle schede tecniche non sceglierei automaticamente un prodotto rispetto all’altro senza confermare supporto, finitura richiesta, prestazioni attese e condizioni di cantiere.</p>
+          ` : `
+            <p>la ringraziamo per averci contattato. In merito alla sua richiesta, dai riferimenti presenti nelle schede tecniche indicizzate il prodotto più pertinente è ${productLink(main)}.</p>
+            <p><strong>Valutazione tecnica:</strong> ${productLead(main)}</p>
+          `}
+          ${hasCycle && !comparison ? `
             <p><strong>Ciclo consigliato${cycle.rule ? ` (${escapeHtml(cycle.rule)})` : ""}:</strong></p>
             <ul class="cycle-list">
               <li><strong>Preparazione del supporto:</strong> ${formatProductList(cycle.preparation, "verificare che il supporto sia pulito, asciutto, coerente e conforme alle indicazioni della scheda tecnica prima dell'applicazione.")}</li>
@@ -378,7 +472,7 @@
           ` : `
             <p><strong>Ciclo completo:</strong> non indicarlo automaticamente. Per questa richiesta la scheda permette di parlare del prodotto, ma servono supporto, stato del pavimento e finitura desiderata per consigliare preparazione e manutenzione.</p>
           `}
-          <p><strong>Canale di acquisto:</strong> ${escapeHtml(customerChannel(question))}</p>
+          <p><strong>Canale di acquisto:</strong> ${escapeHtml(customerChannel(question, language))}</p>
           ${photoLine ? `<p><strong>Informazioni utili:</strong> ${escapeHtml(photoLine)}</p>` : ""}
           <p class="source-line">Argomento rilevato: ${escapeHtml(topicLabel)}. La bozza usa solo dati presenti nelle schede indicizzate; verificare sempre eventuali condizioni di cantiere non descritte dal cliente.</p>
           <p>Cordiali saluti,<br>Back Office Italia<br>Tover Srl</p>
